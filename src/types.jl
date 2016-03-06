@@ -5,7 +5,7 @@
 
 # inspiration from Iain's initial work at https://github.com/IainNZ/GPTest
 
-import Base: (*), (+), (-), (/)
+import Base: (*), (+), (-), (/), (^)
 
 abstract Xial
 
@@ -26,7 +26,7 @@ end
 type Posynomial <: Xial
     mons::Vector{Monomial}
 end
-function Base.print(io::IO, pos::Posynomial)    
+function Base.print(io::IO, pos::Posynomial)
     if length(pos.mons) == 0
         print(io, "0")
     elseif length(pos.mons) == 1
@@ -49,6 +49,8 @@ function (/)(num::Number, m::Monomial)
 end
 (-)(m::Monomial, num::Number) = m - Monomial(num)
 (-)(num::Number, m::Monomial) = Monomial(num) - m
+(^)(m::Monomial, num::Number) = Monomial(m.c^num,
+                                    Dict{Int,Float64}([i => m.terms[i]*num for i in keys(m.terms)]))
 # Mon-Mon
 (+)(m::Monomial, n::Monomial) = Posynomial([m,n])
 (-)(m::Monomial, n::Monomial) = Posynomial([m,-1*n])
