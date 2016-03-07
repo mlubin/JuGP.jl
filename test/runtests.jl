@@ -31,6 +31,28 @@ end
     @test_approx_eq_eps getValue(x) 2.0 1e-4
 end
 
+@testset "Monomial+Number and Number+Monomial" begin
+    m = Model(solver=GPSolver())
+
+    @defVar(m, x)
+    @setNLObjective(m, Min, x)
+    @addNLConstraint(m, x^2 + 6 == 10)
+
+    status = solve(m)
+    @test status == :Optimal
+    @test_approx_eq_eps getValue(x) 2.0 1e-4
+
+    m = Model(solver=GPSolver())
+
+    @defVar(m, x)
+    @setNLObjective(m, Min, x)
+    @addNLConstraint(m, 6 + x^2 == 10)
+
+    status = solve(m)
+    @test status == :Optimal
+    @test_approx_eq_eps getValue(x) 2.0 1e-4
+end
+
 @testset "Optimize the shape of a box" begin
     #=
     Optimize shape of a box-shaped structure with

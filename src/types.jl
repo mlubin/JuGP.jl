@@ -47,7 +47,9 @@ end
 function (/)(num::Number, m::Monomial)
     return Monomial(num/m.c, Dict{Int,Float64}(map(x->(x[1],-x[2]),m.terms)))
 end
+(+)(m::Number, num::Monomial) = Monomial(num) + m
 (-)(m::Monomial, num::Number) = m - Monomial(num)
+(+)(m::Monomial, num::Number) = m + Monomial(num)
 (-)(num::Number, m::Monomial) = Monomial(num) - m
 # for ambiguity
 (^)(m::Monomial, num::Integer) = Monomial(m.c^num,
