@@ -79,3 +79,42 @@ end
     # this actually should be inverted
     @test_approx_eq_eps getObjectiveValue(m) 0.003674 1e-2
 end
+
+@testset "Optimal doping profile" begin
+    # Problem from Boyd's GP tutorial
+    # Based on public domain CVX example:
+    # http://web.cvxr.com/cvx/examples/gp_tutorial/html/basic_odp.html
+
+    # Discretization size
+    M = 50
+    # Problem constants
+    g1 = 0.42
+    g2 = 0.69
+    Nmax = 5*10.0^18
+    Nmin = 5*10.0^16
+    Nref = 10.0^17
+    Dn0  = 20.72
+    ni0  = 1.4*10.0^10
+    WB   = 10.0^-5
+    C    =  WB^2/((M^2)*(Nref^g1)*Dn0)
+    # Exponent powers
+    pwi  = g2 -1;
+    pwj  = 1+g1-g2;
+
+    doping = Model(solver=GPSolver())
+    @defVar(doping, v[1:M])
+    @defVar(doping, y[1:M])
+    @defVar(doping, w[1:M])
+
+    # Minimize base transmit times
+    @setNLObjective(doping, Min, C * w[1])
+
+    for i in 1:M-1
+        @addNLConstraint(doping, y[i+1] + v[i]^pwj <= y[i])
+        @addNLConstraint(doping, w[i+1] + y[i]*v[i]^pwi <= w[i])
+    end
+    @addNLConstraint(doping, y[M] == v[M]^pwj)
+    @addNLConstraint(doping, w[M] == y[M]*v[M]^pwi)
+
+    solve(doping)
+end
