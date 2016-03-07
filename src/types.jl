@@ -44,6 +44,7 @@ end
 function (*)(num::Number, m::Monomial)
     return Monomial(num*m.c, m.terms)
 end
+(*)(mon::Monomial,num::Number) = num*mon
 function (/)(num::Number, m::Monomial)
     return Monomial(num/m.c, Dict{Int,Float64}(map(x->(x[1],-x[2]),m.terms)))
 end
@@ -83,6 +84,7 @@ end
 function (*)(pos::Posynomial, m::Monomial)
     return Posynomial([mon*m for mon in pos.mons])
 end
+(*)(mon::Monomial,pos::Posynomial) = pos*mon
 
 (+)(p1::Posynomial, m::Monomial) = Posynomial([p1.mons;m])
 (+)(mon::Monomial,pos::Posynomial) = pos + mon
