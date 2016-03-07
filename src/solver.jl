@@ -92,7 +92,6 @@ function MathProgBase.loadproblem!(m::GPModel, numVar, numConstr, x_lb, x_ub, g_
         #@show con_rhs
         @assert con_rhs > 0
         if g_lb[c] == g_ub[c] # equality constraint
-            @show con
             if isa(con, Posynomial)
                 @assert length(con.mons) == 1
                 con = con.mons[1]
