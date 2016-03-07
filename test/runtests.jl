@@ -7,6 +7,18 @@ else
     const Test = BaseTestNext
 end
 
+@testset "Equality constraints" begin
+    m = Model(solver=GPSolver())
+
+    @defVar(m, x)
+    @setNLObjective(m, Min, x)
+    @addNLConstraint(m, 2x == 4)
+
+    status = solve(m)
+    @test status == :Optimal
+    @test_approx_eq_eps getValue(x) 2.0 1e-4
+end
+
 @testset "Optimize the shape of a box" begin
     #=
     Optimize shape of a box-shaped structure with

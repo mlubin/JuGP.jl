@@ -40,8 +40,8 @@ function MathProgBase.loadproblem!(m::GPModel, numVar, numConstr, x_lb, x_ub, g_
   
         con_type = con_expr.args[2]
         #println("Constraint type: $con_type")
-        if con_type != :(<=)
-            warn("Skipping constraint, only handle <= right now")
+        if con_type != :(<=) && con_type != :(==)
+            warn("Skipping constraint, only handle <= and == right now")
             return
         end
 
@@ -91,8 +91,20 @@ function MathProgBase.loadproblem!(m::GPModel, numVar, numConstr, x_lb, x_ub, g_
         con_rhs = cons_rhs[c]
         #@show con_rhs
         @assert con_rhs > 0
-        epi = generate_epigraph(jump_model, y, con)
-        setUpper(epi, log(con_rhs))
+        if g_lb[c] == g_ub[c] # equality constraint
+            @show con
+            if isa(con, Posynomial)
+                @assert length(con.mons) == 1
+                con = con.mons[1]
+            end
+            @assert isa(con, Monomial)
+            epi = generate_epigraph(jump_model, y, con)
+            setLower(epi, log(con_rhs))
+            setUpper(epi, log(con_rhs))
+        else # <=
+            epi = generate_epigraph(jump_model, y, con)
+            setUpper(epi, log(con_rhs))
+        end
     end
 
     m.jump_model = jump_model
