@@ -49,8 +49,12 @@ function (/)(num::Number, m::Monomial)
 end
 (-)(m::Monomial, num::Number) = m - Monomial(num)
 (-)(num::Number, m::Monomial) = Monomial(num) - m
+# for ambiguity
+(^)(m::Monomial, num::Integer) = Monomial(m.c^num,
+                                    Dict{Int,Float64}([i => m.terms[i]*num for i in keys(m.terms)]))
 (^)(m::Monomial, num::Number) = Monomial(m.c^num,
                                     Dict{Int,Float64}([i => m.terms[i]*num for i in keys(m.terms)]))
+
 # Mon-Mon
 (+)(m::Monomial, n::Monomial) = Posynomial([m,n])
 (-)(m::Monomial, n::Monomial) = Posynomial([m,-1*n])
