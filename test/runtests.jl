@@ -112,4 +112,32 @@ end
     @test_approx_eq_eps getValue(w) 4.081 1e-2
     # this actually should be inverted
     @test_approx_eq_eps getObjectiveValue(m) 0.003674 1e-2
+
+    # with >= constraints
+    m = Model(solver=GPSolver())
+
+    @defVar(m, h)
+    @defVar(m, w)
+    @defVar(m, d)
+
+    @setNLObjective(m, Max, h*w*d)
+
+    @addNLConstraint(m, Awall ≥ 2(h*w+h*d))
+    @addNLConstraint(m, Afloor ≥ w*d)
+
+    @addNLConstraint(m, h/w ≥ α)
+    @addNLConstraint(m, β ≥ h/w)
+
+    @addNLConstraint(m, d/w ≥ γ)
+    @addNLConstraint(m, δ ≥ d/w)
+
+    status = solve(m)
+
+    @test status == :Optimal
+
+    @test_approx_eq_eps getValue(d) 8.17 1e-2
+    @test_approx_eq_eps getValue(h) 8.163 1e-2
+    @test_approx_eq_eps getValue(w) 4.081 1e-2
+    # this actually should be inverted
+    @test_approx_eq_eps getObjectiveValue(m) 0.003674 1e-2
 end

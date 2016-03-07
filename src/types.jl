@@ -77,15 +77,14 @@ end
 
 (*)(num::Number, pos::Posynomial) = Posynomial(map(m->(num*m), pos.mons))
 (-)(pos::Posynomial, num::Number) = pos - Monomial(num)
-(-)(pos::Posynomial, m::Monomial) = pos + (-1)*m
+(-)(num::Number, pos::Posynomial) = Monomial(num) - pos
+(-)(pos::Posynomial, mon::Monomial) = pos + (-1)*mon
+(-)(mon::Monomial, pos::Posynomial) = mon + (-1)*pos
 function (*)(pos::Posynomial, m::Monomial)
     return Posynomial([mon*m for mon in pos.mons])
 end
 
-function (+)(p1::Posynomial, m::Monomial)
-    return Posynomial([p1.mons;m])
-end
+(+)(p1::Posynomial, m::Monomial) = Posynomial([p1.mons;m])
+(+)(mon::Monomial,pos::Posynomial) = pos + mon
 
-function (+)(p1::Posynomial, p2::Posynomial)
-    return Posynomial([p1.mons;p2.mons])
-end
+(+)(p1::Posynomial, p2::Posynomial) = Posynomial([p1.mons;p2.mons])

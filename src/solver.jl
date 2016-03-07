@@ -40,12 +40,12 @@ function MathProgBase.loadproblem!(m::GPModel, numVar, numConstr, x_lb, x_ub, g_
   
         con_type = con_expr.args[2]
         #println("Constraint type: $con_type")
-        if con_type != :(<=) && con_type != :(==)
-            warn("Skipping constraint, only handle <= and == right now")
-            return
+        if con_type == :(>=) # flip
+            con = check_expr_gp(Expr(:call,:*,-1,con_expr.args[1]))
+        else
+            con = check_expr_gp(con_expr.args[1])
         end
 
-        con = check_expr_gp(con_expr.args[1])
         if isa(con,Posynomial)
             # check if any monomials have a negative coefficient, we can have at most one
             found_negative = false
@@ -68,7 +68,12 @@ function MathProgBase.loadproblem!(m::GPModel, numVar, numConstr, x_lb, x_ub, g_
         end
         con, con_constant = extract_constants(con)
         push!(cons, con)
-        push!(cons_rhs, g_ub[c]-con_constant)
+        if con_type == :(>=)
+            push!(cons_rhs, -g_lb[c]-con_constant)
+        else
+            push!(cons_rhs, g_ub[c]-con_constant)
+        end
+
     end
 
     jump_model = JuMP.Model()
@@ -100,7 +105,7 @@ function MathProgBase.loadproblem!(m::GPModel, numVar, numConstr, x_lb, x_ub, g_
             epi = generate_epigraph(jump_model, y, con)
             setLower(epi, log(con_rhs))
             setUpper(epi, log(con_rhs))
-        else # <=
+        else # <= or flipped >=
             epi = generate_epigraph(jump_model, y, con)
             setUpper(epi, log(con_rhs))
         end
