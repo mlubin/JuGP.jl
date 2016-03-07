@@ -58,6 +58,8 @@ end
 
 @testset "Optimize the shape of a box" begin
     #=
+    From http://gpkit.readthedocs.org/en/latest/examples.html#maximizing-the-volume-of-a-box
+
     Optimize shape of a box-shaped structure with
     - height h
     - width w
@@ -109,7 +111,7 @@ end
 
     @test status == :Optimal
 
-    # comparing optimal answers with http://gpkit.readthedocs.org/en/latest/examples.html#maximizing-the-volume-of-a-box
+    # comparing optimal answers with source
     @test_approx_eq_eps getValue(d) 8.17 1e-2
     @test_approx_eq_eps getValue(h) 8.163 1e-2
     @test_approx_eq_eps getValue(w) 4.081 1e-2
@@ -144,4 +146,95 @@ end
     # this actually should be inverted
     @test_approx_eq_eps getObjectiveValue(m) 0.003674 1e-2
 end
+
+@testset "Optimize gate sizes (optional integer variables)" begin
+    #=
+    See Boyd GP tutorial 2007, "gate sizing" examples
+    YALMIP formulation for the integer problem follows, from
+    http://users.isy.liu.se/johanl/yalmip/pmwiki.php?n=Tutorials.GeometricProgramming
+
+    gate size variables:
+    x[1:7]
+
+    expressions:
+    C = alpha+beta.*x
+    A = sum(a.*x)
+    P = sum(f.*e.*x)
+    R = gamma./x
+    D1 = R(1)*(C(4))
+    D2 = R(2)*(C(4)+C(5))
+    D3 = R(3)*(C(5)+C(7))
+    D4 = R(4)*(C(6)+C(7))
+    D5 = R(5)*(C(7))
+    D6 = R(6)*Cout6
+    D7 = R(7)*Cout7
+
+    constraints:
+    x .>= 1
+    P <= 20
+    A <= 100
+
+    objective:
+    minimize max([(D1+D4+D6),(D1+D4+D7),(D2+D4+D6),
+        (D2+D4+D7),(D2+D5+D7),(D3+D5+D6),(D3+D7)])
+    =#
+
+    a     = ones(7)
+    alpha = ones(7)
+    beta  = ones(7)
+    gamma = ones(7)
+    f = [1, 0.8, 1, 0.7, 0.7, 0.5, 0.5]
+    e = [1, 2, 1, 1.5, 1.5, 1, 2]
+    Cout6 = 10
+    Cout7 = 10
+
+    m = Model(solver=GPSolver())
+
+    @defVar(m, D)
+
+    @defVar(m, x[i=1:7] >= 1)
+
+    @setNLObjective(m, Min, D)
+
+    @defNLExpr(m, C[i=1:7], alpha[i] + beta[i] * x[i])
+    @defNLExpr(m, A, sum{a[i] * x[i], i=1:7})
+    @defNLExpr(m, P, sum{f[i] * e[i] * x[i], i=1:7})
+    @defNLExpr(m, R[i=1:7], gamma[i] / x[i])
+    @defNLExpr(m, D1, R[1] * C[4])
+    @defNLExpr(m, D2, R[2] * (C[4] + C[5]))
+    @defNLExpr(m, D3, R[3] * (C[5] + C[7]))
+    @defNLExpr(m, D4, R[4] * (C[6] + C[7]))
+    @defNLExpr(m, D5, R[5] * C[7])
+    @defNLExpr(m, D6, R[6] * Cout6)
+    @defNLExpr(m, D7, R[7] * Cout7)
+
+    @addNLConstraint(m, P <= 20)
+    @addNLConstraint(m, A <= 100)
+    @addNLConstraint(m, D1+D4+D6 <= D)
+    @addNLConstraint(m, D1+D4+D7 <= D)
+    @addNLConstraint(m, D2+D4+D6 <= D)
+    @addNLConstraint(m, D2+D4+D7 <= D)
+    @addNLConstraint(m, D2+D5+D7 <= D)
+    @addNLConstraint(m, D3+D5+D6 <= D)
+    @addNLConstraint(m, D3+D7 <= D)
+
+    # test continuous problem
+    status = solve(m)
+    @test status == :Optimal
+    # comparing optimal continuous answers with YALMIP solutions
+    x_opt = [1.9563, 3.1588, 3.0455, 3.3454, 1.6713, 3.1224, 3.1155]
+    @test_approx_eq_eps getValue(x) x_opt 1e-3
+    @test_approx_eq_eps getObjectiveValue(m) 7.8936 1e-4
+
+    # test integer-constrained problem
+    # setCategory(x, Int)
+    # status = solve(m)
+    # @test status == :Optimal
+    # # comparing optimal continuous answers with YALMIP solutions
+    # x_opt = [1.9563, 3.1588, 3.0455, 3.3454, 1.6713, 3.1224, 3.1155]
+    # @test_approx_eq_eps getValue(x) x_opt 1e-4
+    # @test_approx_eq_eps getObjectiveValue(m) 7.8936 1e-4
+end
+
+include("cvx_examples.jl")
 end
