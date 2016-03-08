@@ -5,7 +5,7 @@
 
 # inspiration from Iain's initial work at https://github.com/IainNZ/GPTest
 
-import Base: (*), (+), (-), (/), (^)
+import Base: (*), (+), (-), (/), (^), (==)
 
 abstract Xial
 
@@ -15,7 +15,8 @@ type Monomial <: Xial
 end
 Monomial() = Monomial(1.0,Dict{Int,Float64}())
 Monomial(c::Number) = Monomial(c, Dict{Int,Float64}())
-
+(==)(m1::Monomial, m2::Monomial) =
+    (m1.c == m2.c) && (m1.terms == m2.terms)
 function Base.print(io::IO, mon::Monomial)
     print(io, mon.c)
     for (i,v) in mon.terms
@@ -23,10 +24,17 @@ function Base.print(io::IO, mon::Monomial)
     end
 end
 
+
+
 type Posynomial <: Xial
     mons::Vector{Monomial}
 end
-function Base.print(io::IO, pos::Posynomial)    
+function (==)(p1::Posynomial, p2::Posynomial)
+    # Doesn't handle sorting differences
+    length(p1.mons) != length(p2.mons) && return false
+    all(pair->pair[1]==pair[2], zip(p1.mons,p2.mons))
+end
+function Base.print(io::IO, pos::Posynomial)
     if length(pos.mons) == 0
         print(io, "0")
     elseif length(pos.mons) == 1
@@ -39,54 +47,3 @@ function Base.print(io::IO, pos::Posynomial)
         print(io, pos.mons[end], "]")
     end
 end
-
-# Mon-number
-function (*)(num::Number, m::Monomial)
-    return Monomial(num*m.c, m.terms)
-end
-(*)(mon::Monomial,num::Number) = num*mon
-function (/)(num::Number, m::Monomial)
-    return Monomial(num/m.c, Dict{Int,Float64}(map(x->(x[1],-x[2]),m.terms)))
-end
-(+)(m::Number, num::Monomial) = Monomial(num) + m
-(-)(m::Monomial, num::Number) = m - Monomial(num)
-(+)(m::Monomial, num::Number) = m + Monomial(num)
-(-)(num::Number, m::Monomial) = Monomial(num) - m
-# for ambiguity
-(^)(m::Monomial, num::Integer) = Monomial(m.c^num,
-                                    Dict{Int,Float64}([i => m.terms[i]*num for i in keys(m.terms)]))
-(^)(m::Monomial, num::Number) = Monomial(m.c^num,
-                                    Dict{Int,Float64}([i => m.terms[i]*num for i in keys(m.terms)]))
-
-# Mon-Mon
-(+)(m::Monomial, n::Monomial) = Posynomial([m,n])
-(-)(m::Monomial, n::Monomial) = Posynomial([m,-1*n])
-function (*)(m::Monomial, n::Monomial)
-    d = copy(m.terms)
-    for (i,v) in n.terms
-        d[i] = get(d,i,0.0) + v
-    end
-    return Monomial(m.c*n.c, d)
-end
-function (/)(m::Monomial, n::Monomial)
-    d = copy(m.terms)
-    for (i,v) in n.terms
-        d[i] = get(d,i,0.0) - v
-    end
-    return Monomial(m.c/n.c, d)
-end
-
-(*)(num::Number, pos::Posynomial) = Posynomial(map(m->(num*m), pos.mons))
-(-)(pos::Posynomial, num::Number) = pos - Monomial(num)
-(-)(num::Number, pos::Posynomial) = Monomial(num) - pos
-(-)(pos::Posynomial, mon::Monomial) = pos + (-1)*mon
-(-)(mon::Monomial, pos::Posynomial) = mon + (-1)*pos
-function (*)(pos::Posynomial, m::Monomial)
-    return Posynomial([mon*m for mon in pos.mons])
-end
-(*)(mon::Monomial,pos::Posynomial) = pos*mon
-
-(+)(p1::Posynomial, m::Monomial) = Posynomial([p1.mons;m])
-(+)(mon::Monomial,pos::Posynomial) = pos + mon
-
-(+)(p1::Posynomial, p2::Posynomial) = Posynomial([p1.mons;p2.mons])

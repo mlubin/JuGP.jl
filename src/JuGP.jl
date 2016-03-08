@@ -6,6 +6,7 @@ using Base.Meta
 
 # package code goes here
 include("types.jl")
+include("operators.jl")
 include("expr.jl")
 include("solver.jl")
 

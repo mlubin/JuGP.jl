@@ -7,6 +7,9 @@ else
     const Test = BaseTestNext
 end
 
+include("operators.jl")
+
+@testset "Model tests" begin
 @testset "Equality constraints" begin
     m = Model(solver=GPSolver())
 
@@ -140,4 +143,5 @@ end
     @test_approx_eq_eps getValue(w) 4.081 1e-2
     # this actually should be inverted
     @test_approx_eq_eps getObjectiveValue(m) 0.003674 1e-2
+end
 end
