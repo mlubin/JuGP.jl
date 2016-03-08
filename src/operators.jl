@@ -15,48 +15,44 @@
 (*)(x::Number, pos::Posynomial) = Posynomial(map(mon->(x*mon), pos.mons))
 (/)(x::Number, pos::Posynomial) = error("Can't divide a scalar by a Posynomial")
 
-
-# Mon-number
-(*)(mon::Monomial,num::Number) = num*mon
-function (/)(num::Number, m::Monomial)
-    return Monomial(num/m.c, Dict{Int,Float64}(map(x->(x[1],-x[2]),m.terms)))
-end
-(-)(m::Monomial, num::Number) = m - Monomial(num)
-(+)(m::Monomial, num::Number) = m + Monomial(num)
-# for ambiguity
-(^)(m::Monomial, num::Integer) = Monomial(m.c^num,
-                                    Dict{Int,Float64}([i => m.terms[i]*num for i in keys(m.terms)]))
+# Monomial--
+(+)(mon::Monomial) =  1*mon
+(-)(mon::Monomial) = -1*mon
+# --Number
+(+)(mon::Monomial, x::Number) = mon + Monomial(x)
+(-)(mon::Monomial, x::Number) = mon - Monomial(x)
+(*)(mon::Monomial, x::Number) = Monomial(mon.c*x, mon.terms)
+(/)(mon::Monomial, x::Number) = Monomial(mon.c/x, mon.terms)
+(^)(m::Monomial, num::Integer) = Monomial(m.c^num,  # for ambiguity
+    Dict{Int,Float64}([i => m.terms[i]*num for i in keys(m.terms)]))
 (^)(m::Monomial, num::Number) = Monomial(m.c^num,
-                                    Dict{Int,Float64}([i => m.terms[i]*num for i in keys(m.terms)]))
-
-# Mon-Mon
-(+)(m::Monomial, n::Monomial) = Posynomial([m,n])
-(-)(m::Monomial, n::Monomial) = Posynomial([m,-1*n])
-function (*)(m::Monomial, n::Monomial)
-    d = copy(m.terms)
-    for (i,v) in n.terms
+    Dict{Int,Float64}([i => m.terms[i]*num for i in keys(m.terms)]))
+# --Monomial
+(+)(m_1::Monomial, m_2::Monomial) = Posynomial([m_1, m_2])
+(-)(m_1::Monomial, m_2::Monomial) = Posynomial([m_1,-m_2])
+function (*)(m_1::Monomial, m_2::Monomial)
+    d = copy(m_1.terms)
+    for (i,v) in m_2.terms
         d[i] = get(d,i,0.0) + v
     end
-    return Monomial(m.c*n.c, d)
+    return Monomial(m_1.c*m_2.c, d)
 end
-function (/)(m::Monomial, n::Monomial)
-    d = copy(m.terms)
-    for (i,v) in n.terms
+function (/)(m_1::Monomial, m_2::Monomial)
+    d = copy(m_1.terms)
+    for (i,v) in m_2.terms
         d[i] = get(d,i,0.0) - v
     end
-    return Monomial(m.c/n.c, d)
+    return Monomial(m_1.c/m_2.c, d)
 end
+# -- Posynomial
+(+)(mon::Monomial,pos::Posynomial) = Posynomial(vcat(mon,pos.mons))
+(-)(mon::Monomial,pos::Posynomial) = Posynomial(vcat(mon,map(-,pos.mons)))
+(*)(mon::Monomial,pos::Posynomial) = Posynomial([mon*pm for pm in pos.mons])
+(/)(mon::Monomial,pos::Posynomial) = error("Can't divide a Monomial by a Posynomial")
 
 
 (-)(pos::Posynomial, num::Number) = pos - Monomial(num)
 (-)(pos::Posynomial, mon::Monomial) = pos + (-1)*mon
-(-)(mon::Monomial, pos::Posynomial) = mon + (-1)*pos
-function (*)(pos::Posynomial, m::Monomial)
-    return Posynomial([mon*m for mon in pos.mons])
-end
-(*)(mon::Monomial,pos::Posynomial) = pos*mon
-
+(*)(pos::Posynomial, m::Monomial) =m * pos
 (+)(p1::Posynomial, m::Monomial) = Posynomial(vcat(p1.mons,m))
-(+)(mon::Monomial,pos::Posynomial) = Posynomial(vcat(mon,pos.mons))
-
 (+)(p1::Posynomial, p2::Posynomial) = Posynomial([p1.mons;p2.mons])

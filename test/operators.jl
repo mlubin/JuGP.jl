@@ -33,4 +33,32 @@ end
         @test_throws ErrorException 3/(2 + Monomial(1))
     end
 end
+@testset "Monomial--" begin
+    @testset "unary" begin
+        @test +Monomial(1) == Monomial( 1)
+        @test -Monomial(1) == Monomial(-1)
+    end
+    @testset "--Number" begin
+        @test Monomial(1) + 2 ==
+            Posynomial([Monomial(1),Monomial(2)])
+        @test Monomial(1) - 1 ==
+            Posynomial([Monomial(1),Monomial(-1)])
+        @test Monomial(3) * 2 == Monomial(6)
+        @test Monomial(3,Dict(2=>2)) / 3   == Monomial(1,Dict(2=>2))
+        @test Monomial(3,Dict(2=>2)) ^ 2   == Monomial(9,Dict(2=>4))
+        @test Monomial(3,Dict(2=>2)) ^ 2.0 == Monomial(9,Dict(2=>4))
+    end
+    @testset "--Monomial" begin
+        @test Monomial(1) + Monomial(2) ==
+            Posynomial([Monomial(1),Monomial(2)])
+        @test Monomial(1) - Monomial(2) ==
+            Posynomial([Monomial(1),Monomial(-2)])
+        @test Monomial(2,Dict(1=>2,2=>3)) *
+                Monomial(3,Dict(2=>4,3=>5)) ==
+            Monomial(6,Dict(1=>2,2=>7,3=>5))
+        @test Monomial(2,Dict(1=>2,2=>3)) /
+                Monomial(3,Dict(2=>4,3=>5)) ==
+            Monomial(2/3,Dict(1=>2,2=>-1,3=>-5))
+    end
+end
 end
