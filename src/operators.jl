@@ -50,9 +50,27 @@ end
 (*)(mon::Monomial,pos::Posynomial) = Posynomial([mon*pm for pm in pos.mons])
 (/)(mon::Monomial,pos::Posynomial) = error("Can't divide a Monomial by a Posynomial")
 
-
-(-)(pos::Posynomial, num::Number) = pos - Monomial(num)
-(-)(pos::Posynomial, mon::Monomial) = pos + (-1)*mon
-(*)(pos::Posynomial, m::Monomial) =m * pos
-(+)(p1::Posynomial, m::Monomial) = Posynomial(vcat(p1.mons,m))
-(+)(p1::Posynomial, p2::Posynomial) = Posynomial([p1.mons;p2.mons])
+# Posynomial--
+(+)(pos::Posynomial) =  1*pos
+(-)(pos::Posynomial) = -1*pos
+# --Number
+(+)(pos::Posynomial, x::Number) = Posynomial(vcat(pos.mons,Monomial( x)))
+(-)(pos::Posynomial, x::Number) = Posynomial(vcat(pos.mons,Monomial(-x)))
+(*)(pos::Posynomial, x::Number) = Posynomial([pm*x for pm in pos.mons])
+(/)(pos::Posynomial, x::Number) = Posynomial([pm/x for pm in pos.mons])
+# --Monomial
+(+)(pos::Posynomial, mon::Monomial) = Posynomial(vcat(pos.mons, mon))
+(-)(pos::Posynomial, mon::Monomial) = Posynomial(vcat(pos.mons,-mon))
+(*)(pos::Posynomial, mon::Monomial) = Posynomial([pm*mon for pm in pos.mons])
+(/)(pos::Posynomial, mon::Monomial) = Posynomial([pm/mon for pm in pos.mons])
+# --Posynomial
+(+)(p_1::Posynomial, p_2::Posynomial) = Posynomial(vcat(p_1.mons,p_2.mons))
+(-)(p_1::Posynomial, p_2::Posynomial) = Posynomial(vcat(p_1.mons,(-p_2).mons))
+function (*)(p_1::Posynomial, p_2::Posynomial)
+    mon_out = Monomial[]
+    for m_1 in p_1.mons, m_2 in p_2.mons
+        push!(mon_out, m_1*m_2)
+    end
+    return Posynomial(mon_out)
+end
+(/)(p_1::Posynomial, p_2::Posynomial) = error("Can't divide a Posynomial by a Posynomial")

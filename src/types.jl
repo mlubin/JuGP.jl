@@ -15,6 +15,7 @@ type Monomial <: Xial
 end
 Monomial() = Monomial(1.0,Dict{Int,Float64}())
 Monomial(c::Number) = Monomial(c, Dict{Int,Float64}())
+Base.convert(::Type{Monomial}, c::Number) = Monomial(c)
 (==)(m1::Monomial, m2::Monomial) =
     (m1.c == m2.c) && (m1.terms == m2.terms)
 function Base.print(io::IO, mon::Monomial)
@@ -25,10 +26,13 @@ function Base.print(io::IO, mon::Monomial)
 end
 
 
-
 type Posynomial <: Xial
     mons::Vector{Monomial}
 end
+Posynomial() = Posynomial(Monomial[])
+Posynomial(c::Number) = Posynomial(Monomial[Monomial(c)])
+Posynomial(m::Monomial) = Posynomial(Monomial[m])
+Posynomial(args...) = Posynomial(Monomial[args...])
 function (==)(p1::Posynomial, p2::Posynomial)
     # Doesn't handle sorting differences
     length(p1.mons) != length(p2.mons) && return false
