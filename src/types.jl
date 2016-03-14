@@ -28,7 +28,7 @@ end
 type Posynomial <: Xial
     mons::Vector{Monomial}
 end
-Posynomial(c::Number) = Posynomial(Monomial[Monomial(c)])
+Posynomial(c::Number) = Posynomial(Monomial(c))
 Posynomial(m::Monomial) = Posynomial(Monomial[m])
 Posynomial(args...) = Posynomial(Monomial[args...])
 function (==)(p1::Posynomial, p2::Posynomial)
