@@ -13,7 +13,6 @@ type Monomial <: Xial
     c::Float64
     terms::Dict{Int,Float64} # variable index to power (coefficient)
 end
-Monomial() = Monomial(1.0,Dict{Int,Float64}())
 Monomial(c::Number) = Monomial(c, Dict{Int,Float64}())
 Base.convert(::Type{Monomial}, c::Number) = Monomial(c)
 (==)(m1::Monomial, m2::Monomial) =
@@ -29,7 +28,6 @@ end
 type Posynomial <: Xial
     mons::Vector{Monomial}
 end
-Posynomial() = Posynomial(Monomial[])
 Posynomial(c::Number) = Posynomial(Monomial[Monomial(c)])
 Posynomial(m::Monomial) = Posynomial(Monomial[m])
 Posynomial(args...) = Posynomial(Monomial[args...])

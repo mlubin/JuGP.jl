@@ -49,7 +49,7 @@ function MathProgBase.loadproblem!(m::GPModel, numVar, numConstr, x_lb, x_ub, g_
         if isa(con,Posynomial)
             # check if any monomials have a negative coefficient, we can have at most one
             found_negative = false
-            negative_monomial = Monomial()
+            negative_monomial = Monomial(1.0)
             new_con = []
             for mon in con.mons
                 if mon.c < 0
