@@ -150,33 +150,8 @@ end
 @testset "Optimize gate sizes (optional integer variables)" begin
     #=
     See Boyd GP tutorial 2007, "gate sizing" examples
-    YALMIP formulation for the integer problem follows, from
+    Translated fom YALMIP formulation from
     http://users.isy.liu.se/johanl/yalmip/pmwiki.php?n=Tutorials.GeometricProgramming
-
-    gate size variables:
-    x[1:7]
-
-    expressions:
-    C = alpha+beta.*x
-    A = sum(a.*x)
-    P = sum(f.*e.*x)
-    R = gamma./x
-    D1 = R(1)*(C(4))
-    D2 = R(2)*(C(4)+C(5))
-    D3 = R(3)*(C(5)+C(7))
-    D4 = R(4)*(C(6)+C(7))
-    D5 = R(5)*(C(7))
-    D6 = R(6)*Cout6
-    D7 = R(7)*Cout7
-
-    constraints:
-    x .>= 1
-    P <= 20
-    A <= 100
-
-    objective:
-    minimize max([(D1+D4+D6),(D1+D4+D7),(D2+D4+D6),
-        (D2+D4+D7),(D2+D5+D7),(D3+D5+D6),(D3+D7)])
     =#
 
     a     = ones(7)
