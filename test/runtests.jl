@@ -1,4 +1,5 @@
 using JuGP, JuMP
+using AmplNLWriter
 
 if VERSION >= v"0.5-"
     using Base.Test
@@ -176,7 +177,7 @@ end
     Cout6 = 10
     Cout7 = 10
 
-    m = GPModel()
+    m = GPModel(solver=BonminNLSolver())
 
     @defVar(m, D)
 
@@ -215,13 +216,15 @@ end
     @test_approx_eq_eps getObjectiveValue(m) 7.8936 1e-4
 
     # test integer-constrained problem
-    # setCategory(x, Int)
-    # status = solve(m)
-    # @test status == :Optimal
-    # # comparing optimal continuous answers with YALMIP solutions
-    # x_opt = [1.9563, 3.1588, 3.0455, 3.3454, 1.6713, 3.1224, 3.1155]
-    # @test_approx_eq_eps getValue(x) x_opt 1e-4
-    # @test_approx_eq_eps getObjectiveValue(m) 7.8936 1e-4
+    for i in 1:7
+        setDiscrete(x[i], 1:10)
+    end
+    status = solve(m)
+    @test status == :Optimal
+    # comparing optimal integer answers with YALMIP solutions
+    x_opt = [2, 3, 3, 3, 2, 3, 3]
+    @test_approx_eq_eps getValue(x) x_opt 1e-4
+    @test_approx_eq_eps getObjectiveValue(m) 8.3333 1e-4
 end
 
 include("cvx_examples.jl")

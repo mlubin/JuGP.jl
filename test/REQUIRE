@@ -1,3 +1,5 @@
 Ipopt
 GLPKMathProgInterface
 BaseTestNext
+AmplNLWriter
+CoinOptServices
