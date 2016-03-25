@@ -162,8 +162,9 @@ end
 @testset "Optimize gate sizes (optional integer variables)" begin
     #=
     See Boyd GP tutorial 2007, "gate sizing" examples
-    Translated fom YALMIP formulation from
+    Translated from YALMIP formulation:
     http://users.isy.liu.se/johanl/yalmip/pmwiki.php?n=Tutorials.GeometricProgramming
+    Received permission from Johan Löfberg to distribute under MPL
     =#
 
     a     = ones(7)
