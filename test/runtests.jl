@@ -11,7 +11,7 @@ include("operators.jl")
 
 @testset "Model tests" begin
 @testset "Equality constraints" begin
-    m = Model(solver=GPSolver())
+    m = GPModel()
 
     @defVar(m, x)
     @setNLObjective(m, Min, x)
@@ -23,7 +23,7 @@ include("operators.jl")
 end
 
 @testset "Monomial^Number" begin
-    m = Model(solver=GPSolver())
+    m = GPModel()
 
     @defVar(m, x)
     @setNLObjective(m, Min, x)
@@ -35,7 +35,7 @@ end
 end
 
 @testset "Monomial+Number and Number+Monomial" begin
-    m = Model(solver=GPSolver())
+    m = GPModel()
 
     @defVar(m, x)
     @setNLObjective(m, Min, x)
@@ -45,7 +45,7 @@ end
     @test status == :Optimal
     @test_approx_eq_eps getValue(x) 2.0 1e-4
 
-    m = Model(solver=GPSolver())
+    m = GPModel()
 
     @defVar(m, x)
     @setNLObjective(m, Min, x)
@@ -90,7 +90,7 @@ end
     γ = 2
     δ = 10
 
-    m = Model(solver=GPSolver())
+    m = GPModel()
 
     @defVar(m, h)
     @defVar(m, w)
@@ -119,7 +119,7 @@ end
     @test_approx_eq_eps getObjectiveValue(m) 0.003674 1e-2
 
     # with >= constraints
-    m = Model(solver=GPSolver())
+    m = GPModel()
 
     @defVar(m, h)
     @defVar(m, w)
@@ -163,7 +163,7 @@ end
     Cout6 = 10
     Cout7 = 10
 
-    m = Model(solver=GPSolver())
+    m = GPModel()
 
     @defVar(m, D)
 

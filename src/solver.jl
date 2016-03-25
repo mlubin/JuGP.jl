@@ -3,20 +3,24 @@
 #  License, v. 2.0. If a copy of the MPL was not distributed with this
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-export GPSolver
+function solvehook(m::Model; suppress_warnings=false)
+    buildInternalModel(m)
+    solve(m,suppress_warnings=suppress_warnings,ignore_solve_hook=true)
+end
+
 type GPSolver <: MathProgBase.AbstractMathProgSolver
 end
-type GPModel <: MathProgBase.AbstractNonlinearModel
+type GPInternalModel <: MathProgBase.AbstractNonlinearModel
     status::Symbol
     jump_model::JuMP.Model
     y::Vector{JuMP.Variable}
-    function GPModel()
+    function GPInternalModel()
         return new(:Unsolved)
     end
 end
-MathProgBase.NonlinearModel(s::GPSolver) = GPModel()
+MathProgBase.NonlinearModel(s::GPSolver) = GPInternalModel()
 
-function MathProgBase.loadproblem!(m::GPModel, numVar, numConstr, x_lb, x_ub, g_lb, g_ub, sense, 
+function MathProgBase.loadproblem!(m::GPInternalModel, numVar, numConstr, x_lb, x_ub, g_lb, g_ub, sense,
     d::MathProgBase.AbstractNLPEvaluator)
 
     MathProgBase.initialize(d, [:ExprGraph])
@@ -145,17 +149,17 @@ function generate_epigraph(m::JuMP.Model, y, pos::Posynomial)
     end
 end
 
-MathProgBase.setwarmstart!(m::GPModel,x) = nothing
-function MathProgBase.optimize!(m::GPModel)
+MathProgBase.setwarmstart!(m::GPInternalModel,x) = nothing
+function MathProgBase.optimize!(m::GPInternalModel)
     m.status = solve(m.jump_model)
 end
-MathProgBase.status(m::GPModel) = m.status
+MathProgBase.status(m::GPInternalModel) = m.status
 
-function MathProgBase.getobjval(m::GPModel)
+function MathProgBase.getobjval(m::GPInternalModel)
     return exp(getObjectiveValue(m.jump_model))
 end
 
-function MathProgBase.getsolution(m::GPModel)
+function MathProgBase.getsolution(m::GPInternalModel)
     y = getValue(m.y)
     return exp(y)
 end

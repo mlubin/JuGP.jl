@@ -49,3 +49,9 @@ function Base.print(io::IO, pos::Posynomial)
         print(io, pos.mons[end], "]")
     end
 end
+
+type GPData
+    discretevalues::Dict{Int,Vector{Float64}}
+end
+
+GPData() = GPData(Dict{Int,Vector{Float64}}())

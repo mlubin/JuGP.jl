@@ -47,7 +47,7 @@ Mutapcic, Michael Grant, and Stephen Boyd."
     pwi = g2-1
     pwj = 1+g1-g2
 
-    m = Model(solver=GPSolver())
+    m = GPModel()
 
     @defVar(m, Nmin <= v[i=1:M] <= Nmax)
     @defVar(m, y[i=1:M])
@@ -122,7 +122,7 @@ end
 #     X = hcat(X, ones(M))
 #     q = length(ind_true)
 #
-#     m = Model(solver=GPSolver())
+#     m = GPModel()
 #
 #     @defVar(m, z[k=1:2])
 #     @defVar(m, t[k=1:q])
@@ -166,7 +166,7 @@ end
     d = 0.5
     alpha = 2.11
 
-    m = Model(solver=GPSolver())
+    m = GPModel()
 
     @defVar(m, wMax)
     @defVar(m, habMax)
@@ -254,7 +254,7 @@ end
 #     E = 1
 #     F = 1
 #
-#     m = Model(solver=GPSolver())
+#     m = GPModel()
 #
 #     @defVar(m, wmin <= w[i=1:N] <= wmax)
 #     @defVar(m, hmin <= h[i=1:N] <= hmax)
@@ -302,7 +302,7 @@ end
         -0.6997983901300008 -0.8699116880973898 1.1225766187758226 -2.654087224755067
         -0.40051651256252796 0.38234147083401476 -0.4742359774002496 -0.013651221368362231]
 
-    m = Model(solver=GPSolver())
+    m = GPModel()
 
     @defVar(m, s)
     @defVar(m, d[i=1:N])
@@ -355,7 +355,7 @@ end
     gamma = [1, 1, 1]
     delta = [1, 1, 1]
 
-    m = Model(solver=GPSolver())
+    m = GPModel()
 
     @defVar(m, lambda)
     @defVar(m, b[1:4])
