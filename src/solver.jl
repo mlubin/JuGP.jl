@@ -4,21 +4,36 @@
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 function solvehook(m::Model; suppress_warnings=false)
-    buildInternalModel(m)
+
+    gp = m.ext[:GP]::GPData
+    # hack!
+    m.solver.discretevalues = gp.discretevalues
+
     solve(m,suppress_warnings=suppress_warnings,ignore_solve_hook=true)
 end
 
+
+
 type GPSolver <: MathProgBase.AbstractMathProgSolver
+    real_solver
+    discretevalues::Dict{Int,Vector{Float64}} # hack to pass this to "solver"
 end
+GPSolver(real_solver) = GPSolver(real_solver,Dict{Int,Vector{Float64}}())
+
 type GPInternalModel <: MathProgBase.AbstractNonlinearModel
     status::Symbol
     jump_model::JuMP.Model
+    real_solver
     y::Vector{JuMP.Variable}
-    function GPInternalModel()
-        return new(:Unsolved)
+    discretevalues::Dict{Int,Vector{Float64}}
+    function GPInternalModel(real_solver,discretevalues)
+        m = new(:Unsolved)
+        m.real_solver = real_solver
+        m.discretevalues = discretevalues
+        return m
     end
 end
-MathProgBase.NonlinearModel(s::GPSolver) = GPInternalModel()
+MathProgBase.NonlinearModel(s::GPSolver) = GPInternalModel(s.real_solver,s.discretevalues)
 
 function MathProgBase.loadproblem!(m::GPInternalModel, numVar, numConstr, x_lb, x_ub, g_lb, g_ub, sense,
     d::MathProgBase.AbstractNLPEvaluator)
@@ -80,7 +95,11 @@ function MathProgBase.loadproblem!(m::GPInternalModel, numVar, numConstr, x_lb, 
 
     end
 
-    jump_model = JuMP.Model()
+    if m.real_solver !== nothing
+        jump_model = JuMP.Model(solver=m.real_solver)
+    else
+        jump_model = JuMP.Model()
+    end
     # x = exp(y), y = log(x)
     @defVar(jump_model, y[1:numVar])
     for i in 1:numVar
@@ -118,6 +137,21 @@ function MathProgBase.loadproblem!(m::GPInternalModel, numVar, numConstr, x_lb, 
     m.jump_model = jump_model
     m.y = y
 
+    # generate the formulation for discrete part of the model
+    discretevalues!(m)
+
+end
+
+function discretevalues!(m::GPInternalModel)
+    for (ind, values) in m.discretevalues
+        N = length(values)
+        @assert all(v -> v > 0, values)
+        logvals = log(values)
+        # dummy formulation
+        @defVar(m.jump_model, discrete[1:N], Bin)
+        @addConstraint(m.jump_model, sum(discrete) == 1)
+        @addConstraint(m.jump_model, m.y[ind] == dot(logvals,discrete))
+    end
 end
 
 function generate_aux(m::JuMP.Model, y, mon::Monomial)
