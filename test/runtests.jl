@@ -1,5 +1,4 @@
 using JuGP, JuMP
-using AmplNLWriter
 
 if VERSION >= v"0.5-"
     using Base.Test
@@ -7,6 +6,8 @@ else
     using BaseTestNext
     const Test = BaseTestNext
 end
+
+include(Pkg.dir("JuMP","test","solvers.jl"))
 
 include("operators.jl")
 
@@ -160,6 +161,8 @@ end
     @test_approx_eq_eps getObjectiveValue(m) 0.003674 1e-2
 end
 
+if nlw && osl # these are defined in JuMP's test/solvers.jl
+# Only run if Bonmin is installed
 @testset "Optimize gate sizes (optional integer variables)" begin
     #=
     See Boyd GP tutorial 2007, "gate sizing" examples
@@ -177,7 +180,7 @@ end
     Cout6 = 10
     Cout7 = 10
 
-    m = GPModel(solver=BonminNLSolver())
+    m = GPModel(solver=AmplNLWriter.BonminNLSolver())
 
     @defVar(m, D)
 
@@ -225,6 +228,7 @@ end
     x_opt = [2, 3, 3, 3, 2, 3, 3]
     @test_approx_eq_eps getValue(x) x_opt 1e-4
     @test_approx_eq_eps getObjectiveValue(m) 8.3333 1e-4
+end
 end
 
 include("cvx_examples.jl")
