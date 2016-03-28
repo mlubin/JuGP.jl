@@ -9,56 +9,70 @@ end
 
 include(Pkg.dir("JuMP","test","solvers.jl"))
 
+methods = [:LogSumExp, :Conic]
+cont_solvers = Dict()
+cont_solvers[:LogSumExp] = []
+cont_solvers[:Conic] = []
+
+ipt && push!(cont_solvers[:LogSumExp], Ipopt.IpoptSolver(print_level=0))
+eco && push!(cont_solvers[:Conic], ECOS.ECOSSolver(verbose=false))
+
 include("operators.jl")
 
 @testset "Model tests" begin
-@testset "Equality constraints" begin
-    m = GPModel()
+@testset "Equality constraints, $meth" for meth in methods
+    for solv in cont_solvers[meth]
+        m = GPModel(method=meth,solver=solv)
 
-    @defVar(m, x)
-    @setNLObjective(m, Min, x)
-    @addNLConstraint(m, 2x == 4)
+        @defVar(m, x)
+        @setNLObjective(m, Min, x)
+        @addNLConstraint(m, 2x == 4)
 
-    status = solve(m)
-    @test status == :Optimal
-    @test_approx_eq_eps getValue(x) 2.0 1e-4
+        status = solve(m)
+        @test status == :Optimal
+        @test_approx_eq_eps getValue(x) 2.0 1e-4
+    end
 end
 
-@testset "Monomial^Number" begin
-    m = GPModel()
+@testset "Monomial^Number, $meth" for meth in methods
+    for solv in cont_solvers[meth]
+        m = GPModel(method=meth,solver=solv)
 
-    @defVar(m, x)
-    @setNLObjective(m, Min, x)
-    @addNLConstraint(m, x^2 == 4)
+        @defVar(m, x)
+        @setNLObjective(m, Min, x)
+        @addNLConstraint(m, x^2 == 4)
 
-    status = solve(m)
-    @test status == :Optimal
-    @test_approx_eq_eps getValue(x) 2.0 1e-4
+        status = solve(m)
+        @test status == :Optimal
+        @test_approx_eq_eps getValue(x) 2.0 1e-4
+    end
 end
 
-@testset "Monomial+Number and Number+Monomial" begin
-    m = GPModel()
+@testset "Monomial+Number and Number+Monomial, $meth" for meth in methods
+    for solv in cont_solvers[meth]
+        m = GPModel(method=meth,solver=solv)
 
-    @defVar(m, x)
-    @setNLObjective(m, Min, x)
-    @addNLConstraint(m, x^2 + 6 == 10)
+        @defVar(m, x)
+        @setNLObjective(m, Min, x)
+        @addNLConstraint(m, x^2 + 6 == 10)
 
-    status = solve(m)
-    @test status == :Optimal
-    @test_approx_eq_eps getValue(x) 2.0 1e-4
+        status = solve(m)
+        @test status == :Optimal
+        @test_approx_eq_eps getValue(x) 2.0 1e-4
 
-    m = GPModel()
+        m = GPModel(method=meth,solver=solv)
 
-    @defVar(m, x)
-    @setNLObjective(m, Min, x)
-    @addNLConstraint(m, 6 + x^2 == 10)
+        @defVar(m, x)
+        @setNLObjective(m, Min, x)
+        @addNLConstraint(m, 6 + x^2 == 10)
 
-    status = solve(m)
-    @test status == :Optimal
-    @test_approx_eq_eps getValue(x) 2.0 1e-4
+        status = solve(m)
+        @test status == :Optimal
+        @test_approx_eq_eps getValue(x) 2.0 1e-4
+    end
 end
 
-@testset "Optimize the shape of a box" begin
+@testset "Optimize the shape of a box, $meth" for meth in methods
     #=
     From http://gpkit.readthedocs.org/en/latest/examples.html#maximizing-the-volume-of-a-box
     We copy the license for gpkit below:
@@ -104,61 +118,64 @@ end
     γ = 2
     δ = 10
 
-    m = GPModel()
+    for solv in cont_solvers[meth]
 
-    @defVar(m, h)
-    @defVar(m, w)
-    @defVar(m, d)
+        m = GPModel(method=meth,solver=solv)
 
-    @setNLObjective(m, Max, h*w*d)
+        @defVar(m, h)
+        @defVar(m, w)
+        @defVar(m, d)
 
-    @addNLConstraint(m, 2(h*w+h*d) ≤ Awall)
-    @addNLConstraint(m, w*d ≤ Afloor)
+        @setNLObjective(m, Max, h*w*d)
 
-    @addNLConstraint(m, α ≤ h/w)
-    @addNLConstraint(m, h/w ≤ β)
+        @addNLConstraint(m, 2(h*w+h*d) ≤ Awall)
+        @addNLConstraint(m, w*d ≤ Afloor)
 
-    @addNLConstraint(m, γ ≤ d/w)
-    @addNLConstraint(m, d/w ≤ δ)
+        @addNLConstraint(m, α ≤ h/w)
+        @addNLConstraint(m, h/w ≤ β)
 
-    status = solve(m)
+        @addNLConstraint(m, γ ≤ d/w)
+        @addNLConstraint(m, d/w ≤ δ)
 
-    @test status == :Optimal
+        status = solve(m)
 
-    # comparing optimal answers with source
-    @test_approx_eq_eps getValue(d) 8.17 1e-2
-    @test_approx_eq_eps getValue(h) 8.163 1e-2
-    @test_approx_eq_eps getValue(w) 4.081 1e-2
-    # this actually should be inverted
-    @test_approx_eq_eps getObjectiveValue(m) 0.003674 1e-2
+        @test status == :Optimal
 
-    # with >= constraints
-    m = GPModel()
+        # comparing optimal answers with source
+        @test_approx_eq_eps getValue(d) 8.17 1e-2
+        @test_approx_eq_eps getValue(h) 8.163 1e-2
+        @test_approx_eq_eps getValue(w) 4.081 1e-2
+        # this actually should be inverted
+        @test_approx_eq_eps getObjectiveValue(m) 0.003674 1e-2
 
-    @defVar(m, h)
-    @defVar(m, w)
-    @defVar(m, d)
+        # with >= constraints
+        m = GPModel(method=meth,solver=solv)
 
-    @setNLObjective(m, Max, h*w*d)
+        @defVar(m, h)
+        @defVar(m, w)
+        @defVar(m, d)
 
-    @addNLConstraint(m, Awall ≥ 2(h*w+h*d))
-    @addNLConstraint(m, Afloor ≥ w*d)
+        @setNLObjective(m, Max, h*w*d)
 
-    @addNLConstraint(m, h/w ≥ α)
-    @addNLConstraint(m, β ≥ h/w)
+        @addNLConstraint(m, Awall ≥ 2(h*w+h*d))
+        @addNLConstraint(m, Afloor ≥ w*d)
 
-    @addNLConstraint(m, d/w ≥ γ)
-    @addNLConstraint(m, δ ≥ d/w)
+        @addNLConstraint(m, h/w ≥ α)
+        @addNLConstraint(m, β ≥ h/w)
 
-    status = solve(m)
+        @addNLConstraint(m, d/w ≥ γ)
+        @addNLConstraint(m, δ ≥ d/w)
 
-    @test status == :Optimal
+        status = solve(m)
 
-    @test_approx_eq_eps getValue(d) 8.17 1e-2
-    @test_approx_eq_eps getValue(h) 8.163 1e-2
-    @test_approx_eq_eps getValue(w) 4.081 1e-2
-    # this actually should be inverted
-    @test_approx_eq_eps getObjectiveValue(m) 0.003674 1e-2
+        @test status == :Optimal
+
+        @test_approx_eq_eps getValue(d) 8.17 1e-2
+        @test_approx_eq_eps getValue(h) 8.163 1e-2
+        @test_approx_eq_eps getValue(w) 4.081 1e-2
+        # this actually should be inverted
+        @test_approx_eq_eps getObjectiveValue(m) 0.003674 1e-2
+    end
 end
 
 if nlw && osl # these are defined in JuMP's test/solvers.jl

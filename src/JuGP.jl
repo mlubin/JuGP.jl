@@ -1,6 +1,7 @@
 module JuGP
 
 using JuMP
+import Convex
 using MathProgBase
 using Base.Meta
 
@@ -10,8 +11,8 @@ include("operators.jl")
 include("expr.jl")
 include("solver.jl")
 
-function GPModel(;solver=nothing)
-    m = Model(solver=GPSolver(solver))
+function GPModel(;solver=nothing,method=:LogSumExp)
+    m = Model(solver=GPSolver(method,solver))
     @defNLParam(m, foo == 1) # to work around NLP resolve warning
     m.solvehook = solvehook
     m.ext[:GP] = GPData()
