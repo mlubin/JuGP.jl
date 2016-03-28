@@ -11,7 +11,7 @@ library, including Lieven Vandenberghe, Joëlle Skaf, Argyris Zymnis, Almir
 Mutapcic, Michael Grant, and Stephen Boyd."
 =#
 
-@testset "Optimal doping profiles" begin
+@testset "Optimal doping profiles, $meth" for meth in methods
     #=
     Boyd, Kim, Vandenberghe, and Hassibi, "A tutorial on geometric programming"
     Joshi, Boyd, and Dutton, "Optimal doping profiles via geometric programming"
@@ -47,38 +47,41 @@ Mutapcic, Michael Grant, and Stephen Boyd."
     pwi = g2-1
     pwj = 1+g1-g2
 
-    m = GPModel()
+    for solv in cont_solvers[meth]
 
-    @defVar(m, Nmin <= v[i=1:M] <= Nmax)
-    @defVar(m, y[i=1:M])
-    @defVar(m, w[i=1:M])
+        m = GPModel(method=meth,solver=solv)
 
-    @setNLObjective(m, Min, C * w[1]) # the base transmit time
+        @defVar(m, Nmin <= v[i=1:M] <= Nmax)
+        @defVar(m, y[i=1:M])
+        @defVar(m, w[i=1:M])
 
-    @addNLConstraint(m, ly[i=1:M-1], y[i+1] + v[i]^pwj <= y[i])
-    @addNLConstraint(m, lw[i=1:M-1], w[i+1] + y[i] * v[i]^pwi <= w[i])
-    @addNLConstraint(m, ey, y[M] == v[M]^pwj)
-    @addNLConstraint(m, ew, w[M] == y[M] * v[M]^pwi)
+        @setNLObjective(m, Min, C * w[1]) # the base transmit time
 
-    # test continuous problem
-    status = solve(m)
-    @test status == :Optimal
-    # comparing optimal continuous answers with cvx solutions
-    @test_approx_eq_eps getObjectiveValue(m) 1.57873e-12 1e-5
-    v_opt = [4.99999998094197e18,4.99999851343142e18,2.54007808655285e18,1.50011889500592e18,
-        9.78811490079119e17,6.83192189106757e17,5.00671118987733e17,3.80719724163692e17,
-        2.9802359179552e17,2.38808625851304e17,1.95080971252896e17,1.61954847488488e17,
-        1.36314038747507e17,1.16098679267784e17,9.9905244235857e16,8.67520833800946e16,
-        7.59368040516422e16,6.69466735606206e16,5.94007147840608e16,5.30113996473861e16,
-        5.00000029431718e16,5.00000009149364e16,5.00000005457447e16,5.00000003896229e16,
-        5.00000003032521e16,5.00000002483656e16,5.0000000210376e16,5.00000001825071e16,
-        5.00000001611816e16,5.00000001443311e16,5.00000001306762e16,5.00000001193836e16,
-        5.00000001098865e16,5.00000001017856e16,5.00000000947924e16,5.00000000886924e16,
-        5.00000000833228e16,5.00000000785583e16,5.00000000743003e16,5.00000000704698e16,
-        5.00000000670038e16,5.00000000638508e16,5.0000000060967e16,5.00000000583167e16,
-        5.00000000558689e16,5.00000000535966e16,5.00000000514724e16,5.00000000494647e16,
-        5.00000000475203e16,5.00000000458168e16]
-    @test_approx_eq_eps log(getValue(v)) log(v_opt) 2e-3
+        @addNLConstraint(m, ly[i=1:M-1], y[i+1] + v[i]^pwj <= y[i])
+        @addNLConstraint(m, lw[i=1:M-1], w[i+1] + y[i] * v[i]^pwi <= w[i])
+        @addNLConstraint(m, ey, y[M] == v[M]^pwj)
+        @addNLConstraint(m, ew, w[M] == y[M] * v[M]^pwi)
+
+        # test continuous problem
+        status = solve(m)
+        @test status == :Optimal
+        # comparing optimal continuous answers with cvx solutions
+        @test_approx_eq_eps getObjectiveValue(m) 1.57873e-12 1e-5
+        v_opt = [4.99999998094197e18,4.99999851343142e18,2.54007808655285e18,1.50011889500592e18,
+            9.78811490079119e17,6.83192189106757e17,5.00671118987733e17,3.80719724163692e17,
+            2.9802359179552e17,2.38808625851304e17,1.95080971252896e17,1.61954847488488e17,
+            1.36314038747507e17,1.16098679267784e17,9.9905244235857e16,8.67520833800946e16,
+            7.59368040516422e16,6.69466735606206e16,5.94007147840608e16,5.30113996473861e16,
+            5.00000029431718e16,5.00000009149364e16,5.00000005457447e16,5.00000003896229e16,
+            5.00000003032521e16,5.00000002483656e16,5.0000000210376e16,5.00000001825071e16,
+            5.00000001611816e16,5.00000001443311e16,5.00000001306762e16,5.00000001193836e16,
+            5.00000001098865e16,5.00000001017856e16,5.00000000947924e16,5.00000000886924e16,
+            5.00000000833228e16,5.00000000785583e16,5.00000000743003e16,5.00000000704698e16,
+            5.00000000670038e16,5.00000000638508e16,5.0000000060967e16,5.00000000583167e16,
+            5.00000000558689e16,5.00000000535966e16,5.00000000514724e16,5.00000000494647e16,
+            5.00000000475203e16,5.00000000458168e16]
+        @test_approx_eq_eps log(getValue(v)) log(v_opt) 2e-3
+    end
 end
 
 # @testset "Logistic regression via geometric programming" begin
@@ -142,7 +145,7 @@ end
 #     @test_approx_eq_eps log(getValue(z[2])) -2.397533059296778 1e-4
 # end
 
-@testset "Floor planning" begin
+@testset "Floor planning, $meth" for meth in methods
     #=
     Boyd, Kim, Vandenberghe, and Hassibi, "A Tutorial on Geometric Programming"
 
@@ -166,56 +169,59 @@ end
     d = 0.5
     alpha = 2.11
 
-    m = GPModel()
+    for solv in cont_solvers[meth]
 
-    @defVar(m, wMax)
-    @defVar(m, habMax)
-    @defVar(m, hcdMax)
-    @defVar(m, wa)
-    @defVar(m, wb)
-    @defVar(m, wc)
-    @defVar(m, wd)
-    @defVar(m, ha)
-    @defVar(m, hb)
-    @defVar(m, hc)
-    @defVar(m, hd)
+        m = GPModel(method=meth,solver=solv)
 
-    @setNLObjective(m, Min, wMax * (habMax + hcdMax))
+        @defVar(m, wMax)
+        @defVar(m, habMax)
+        @defVar(m, hcdMax)
+        @defVar(m, wa)
+        @defVar(m, wb)
+        @defVar(m, wc)
+        @defVar(m, wd)
+        @defVar(m, ha)
+        @defVar(m, hb)
+        @defVar(m, hc)
+        @defVar(m, hd)
 
-    @addNLConstraints m begin
-        wa + wb <= wMax
-        wc + wd <= wMax
-        ha <= habMax
-        hb <= habMax
-        hc <= hcdMax
-        hd <= hcdMax
-        ha * wa == a
-        hb * wb == b
-        hc * wc == c
-        hd * wd == d
-        ha / wa <= alpha
-        hb / wb <= alpha
-        hc / wc <= alpha
-        hd / wd <= alpha
-        ha / wa >= 1/alpha
-        hb / wb >= 1/alpha
-        hc / wc >= 1/alpha
-        hd / wd >= 1/alpha
+        @setNLObjective(m, Min, wMax * (habMax + hcdMax))
+
+        @addNLConstraints m begin
+            wa + wb <= wMax
+            wc + wd <= wMax
+            ha <= habMax
+            hb <= habMax
+            hc <= hcdMax
+            hd <= hcdMax
+            ha * wa == a
+            hb * wb == b
+            hc * wc == c
+            hd * wd == d
+            ha / wa <= alpha
+            hb / wb <= alpha
+            hc / wc <= alpha
+            hd / wd <= alpha
+            ha / wa >= 1/alpha
+            hb / wb >= 1/alpha
+            hc / wc >= 1/alpha
+            hd / wd >= 1/alpha
+        end
+
+        # test continuous problem
+        status = solve(m)
+        @test status == :Optimal
+        # comparing optimal answers with cvx solution
+        @test_approx_eq_eps getObjectiveValue(m) 2.929359634205730 1e-4
+        # @test_approx_eq_eps getValue(ha) 0.4067 1e-4
+        @test_approx_eq_eps getValue(hb) 0.4868 1e-4
+        @test_approx_eq_eps getValue(hc) 1.2247 1e-4
+        @test_approx_eq_eps getValue(hd) 1.0271 1e-4
+        # @test_approx_eq_eps getValue(wa) 0.4918 1e-4
+        @test_approx_eq_eps getValue(wb) 1.0271 1e-4
+        @test_approx_eq_eps getValue(wc) 1.2248 1e-4
+        @test_approx_eq_eps getValue(wd) 0.4868 1e-4
     end
-
-    # test continuous problem
-    status = solve(m)
-    @test status == :Optimal
-    # comparing optimal answers with cvx solution
-    @test_approx_eq_eps getObjectiveValue(m) 2.929359634205730 1e-4
-    # @test_approx_eq_eps getValue(ha) 0.4067 1e-4
-    @test_approx_eq_eps getValue(hb) 0.4868 1e-4
-    @test_approx_eq_eps getValue(hc) 1.2247 1e-4
-    @test_approx_eq_eps getValue(hd) 1.0271 1e-4
-    # @test_approx_eq_eps getValue(wa) 0.4918 1e-4
-    @test_approx_eq_eps getValue(wb) 1.0271 1e-4
-    @test_approx_eq_eps getValue(wc) 1.2248 1e-4
-    @test_approx_eq_eps getValue(wd) 0.4868 1e-4
 end
 
 # @testset "Design of a cantilever beam" begin
@@ -285,7 +291,7 @@ end
 #     @test_approx_eq_eps getValue(h) h_opt 2e-5
 # end
 
-@testset "Frobenius norm diagonal scaling" begin
+@testset "Frobenius norm diagonal scaling, $meth" for meth in methods
     #=
     Boyd & Vandenberghe "Convex Optimization"
     web.cvxr.com/cvx/examples/cvxbook/Ch04_cvx_opt_probs/html/frob_norm_diag_scaling.html
@@ -302,26 +308,28 @@ end
         -0.6997983901300008 -0.8699116880973898 1.1225766187758226 -2.654087224755067
         -0.40051651256252796 0.38234147083401476 -0.4742359774002496 -0.013651221368362231]
 
-    m = GPModel()
+    for solv in cont_solvers[meth]
+        m = GPModel(method=meth,solver=solv)
 
-    @defVar(m, s)
-    @defVar(m, d[i=1:N])
+        @defVar(m, s)
+        @defVar(m, d[i=1:N])
 
-    @setNLObjective(m, Min, s^(1/2))
+        @setNLObjective(m, Min, s^(1/2))
 
-    @addNLConstraint(m, s >= sum{M[i,j]^2 * d[i]^2 / d[j]^2, i=1:N, j=1:N})
+        @addNLConstraint(m, s >= sum{M[i,j]^2 * d[i]^2 / d[j]^2, i=1:N, j=1:N})
 
-    # test continuous problem
-    status = solve(m)
-    @test status == :Optimal
-    # comparing optimal answers with cvx solution
-    @test_approx_eq_eps getObjectiveValue(m) 2.746582079307096 1e-6
-    # multiple opt solutions
-    # d_opt = [0.861200327236396, 1.43343369595786, 0.476975798845936, 1.10877924241676]
-    # @test_approx_eq_eps getValue(d) d_opt 1e-6
+        # test continuous problem
+        status = solve(m)
+        @test status == :Optimal
+        # comparing optimal answers with cvx solution
+        @test_approx_eq_eps getObjectiveValue(m) 2.746582079307096 1e-6
+        # multiple opt solutions
+        # d_opt = [0.861200327236396, 1.43343369595786, 0.476975798845936, 1.10877924241676]
+        # @test_approx_eq_eps getValue(d) d_opt 1e-6
+    end
 end
 
-@testset "Minimum spectral radius via Peron-Frobenius" begin
+@testset "Minimum spectral radius via Peron-Frobenius, $meth" for meth in methods
     #=
     Boyd & Vandenberghe "Convex Optimization"
     web.cvxr.com/cvx/examples/cvxbook/Ch04_cvx_opt_probs/html/min_spec_rad_ppl_dynamics.html
@@ -355,39 +363,41 @@ end
     gamma = [1, 1, 1]
     delta = [1, 1, 1]
 
-    m = GPModel()
+    for solv in cont_solvers[meth]
+        m = GPModel(method=meth,solver=solv)
 
-    @defVar(m, lambda)
-    @defVar(m, b[1:4])
-    @defVar(m, s[1:3])
-    @defVar(m, v[1:4])
-    @defVar(m, c[1:2])
+        @defVar(m, lambda)
+        @defVar(m, b[1:4])
+        @defVar(m, s[1:3])
+        @defVar(m, v[1:4])
+        @defVar(m, c[1:2])
 
-    @setNLObjective(m, Min, lambda)
+        @setNLObjective(m, Min, lambda)
 
-    @addNLConstraint(m, sum{b[i] * v[i], i=1:4} <= lambda * v[1])
-    @addNLConstraint(m, s[1] * v[1] <= lambda * v[2])
-    @addNLConstraint(m, s[2] * v[2] <= lambda * v[3])
-    @addNLConstraint(m, s[3] * v[3] <= lambda * v[4])
-    @addNLConstraint(m, c[1] <= 2)
-    @addNLConstraint(m, c[2] <= 2)
-    @addNLConstraint(m, c[1] >= 0.5)
-    @addNLConstraint(m, c[2] >= 0.5)
-    @addNLConstraint(m, bn[i=1:4], b[i] == b_nom[i] * (c[1] / c_nom[1])^alpha[i] * (c[2] / c_nom[2])^beta[i])
-    @addNLConstraint(m, sn[i=1:3], s[i] == s_nom[i] * (c[1] / c_nom[1])^gamma[i] * (c[2] / c_nom[2])^delta[i])
+        @addNLConstraint(m, sum{b[i] * v[i], i=1:4} <= lambda * v[1])
+        @addNLConstraint(m, s[1] * v[1] <= lambda * v[2])
+        @addNLConstraint(m, s[2] * v[2] <= lambda * v[3])
+        @addNLConstraint(m, s[3] * v[3] <= lambda * v[4])
+        @addNLConstraint(m, c[1] <= 2)
+        @addNLConstraint(m, c[2] <= 2)
+        @addNLConstraint(m, c[1] >= 0.5)
+        @addNLConstraint(m, c[2] >= 0.5)
+        @addNLConstraint(m, bn[i=1:4], b[i] == b_nom[i] * (c[1] / c_nom[1])^alpha[i] * (c[2] / c_nom[2])^beta[i])
+        @addNLConstraint(m, sn[i=1:3], s[i] == s_nom[i] * (c[1] / c_nom[1])^gamma[i] * (c[2] / c_nom[2])^delta[i])
 
-    # test continuous problem
-    status = solve(m)
-    @test status == :Optimal
-    # comparing optimal answers with cvx solution
-    @test_approx_eq_eps getObjectiveValue(m) 0.804067384844554 1e-6
-    b_opt = [0.500000000003113, 0.750000000004669, 0.500000000003113, 0.250000000001556]
-    @test_approx_eq_eps getValue(b) b_opt 1e-6
-    s_opt = [0.250000000001556, 0.250000000001556, 0.750000000004669]
-    @test_approx_eq_eps getValue(s) s_opt 1e-6
-    # multiple optimal v's
-    # v_opt = [1.24367686858908, 0.386683035543248, 0.120227185822489, 0.112142826685870]
-    # @test_approx_eq_eps getValue(v) v_opt 1e-6
-    c_opt = [0.500000000001556, 0.500000000001556]
-    @test_approx_eq_eps getValue(c) c_opt 1e-6
+        # test continuous problem
+        status = solve(m)
+        @test status == :Optimal
+        # comparing optimal answers with cvx solution
+        @test_approx_eq_eps getObjectiveValue(m) 0.804067384844554 1e-6
+        b_opt = [0.500000000003113, 0.750000000004669, 0.500000000003113, 0.250000000001556]
+        @test_approx_eq_eps getValue(b) b_opt 1e-6
+        s_opt = [0.250000000001556, 0.250000000001556, 0.750000000004669]
+        @test_approx_eq_eps getValue(s) s_opt 1e-6
+        # multiple optimal v's
+        # v_opt = [1.24367686858908, 0.386683035543248, 0.120227185822489, 0.112142826685870]
+        # @test_approx_eq_eps getValue(v) v_opt 1e-6
+        c_opt = [0.500000000001556, 0.500000000001556]
+        @test_approx_eq_eps getValue(c) c_opt 1e-6
+    end
 end
