@@ -274,7 +274,7 @@ Mutapcic, Michael Grant, and Stephen Boyd."
     #
     #     @NLobjective(m, Min, sum{w[i]*h[i], i=1:N})
     #
-    #     @defNLExpr(m, d[i=1:N], 6*F/(E*w[i]*h[i]^3))
+    #     @NLexpression(m, d[i=1:N], 6*F/(E*w[i]*h[i]^3))
     #     @NLconstraint(m, vle[i=1:N], (2*i-1)*d[i] + v[i+1] <= v[i])
     #     @NLconstraint(m, yle[i=1:N], (i-1/3)*d[i] + v[i+1] + y[i+1] <= y[i])
     #
