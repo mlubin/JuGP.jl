@@ -199,17 +199,17 @@ include("operators.jl")
 
             @NLobjective(m, Min, D)
 
-            @NLexpression(m, C[i=1:7], alpha[i] + beta[i] * x[i])
-            @NLexpression(m, A, sum(a[i] * x[i] for i=1:7))
-            @NLexpression(m, P, sum(f[i] * e[i] * x[i] for i=1:7))
-            @NLexpression(m, R[i=1:7], gamma[i] / x[i])
-            @NLexpression(m, D1, R[1] * C[4])
-            @NLexpression(m, D2, R[2] * (C[4] + C[5]))
-            @NLexpression(m, D3, R[3] * (C[5] + C[7]))
-            @NLexpression(m, D4, R[4] * (C[6] + C[7]))
-            @NLexpression(m, D5, R[5] * C[7])
-            @NLexpression(m, D6, R[6] * Cout6)
-            @NLexpression(m, D7, R[7] * Cout7)
+            @NLexpression(m, C[i=1:7], alpha[i] + beta[i]*x[i])
+            @NLexpression(m, A, sum(a[i]*x[i] for i=1:7))
+            @NLexpression(m, P, sum(f[i]*e[i]*x[i] for i=1:7))
+            @NLexpression(m, R[i=1:7], gamma[i]/x[i])
+            @NLexpression(m, D1, R[1]*C[4])
+            @NLexpression(m, D2, R[2]*(C[4] + C[5]))
+            @NLexpression(m, D3, R[3]*(C[5] + C[7]))
+            @NLexpression(m, D4, R[4]*(C[6] + C[7]))
+            @NLexpression(m, D5, R[5]*C[7])
+            @NLexpression(m, D6, R[6]*Cout6)
+            @NLexpression(m, D7, R[7]*Cout7)
 
             @NLconstraint(m, P <= 20)
             @NLconstraint(m, A <= 100)
@@ -223,6 +223,7 @@ include("operators.jl")
 
             # test continuous problem
             status = solve(m)
+
             @test status == :Optimal
             # comparing optimal continuous answers with YALMIP solutions
             x_opt = [1.9563, 3.1588, 3.0455, 3.3454, 1.6713, 3.1224, 3.1155]
@@ -231,9 +232,11 @@ include("operators.jl")
 
             # test integer-constrained problem
             for i in 1:7
-                setDiscrete(x[i], 1:10)
+                setdiscretevalues(x[i], 1:10)
             end
+
             status = solve(m)
+
             @test status == :Optimal
             # comparing optimal integer answers with YALMIP solutions
             x_opt = [2, 3, 3, 3, 2, 3, 3]
