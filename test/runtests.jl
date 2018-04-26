@@ -1,9 +1,7 @@
 using JuGP, JuMP
 using Base.Test
 
-# include(Pkg.dir("JuMP", "test", "solvers.jl")) # seems to be broken on travis?
-import Ipopt
-import ECOS
+include(Pkg.dir("JuMP", "test", "solvers.jl"))
 
 methods = [:LogSumExp, :Conic]
 cont_solvers = Dict()
