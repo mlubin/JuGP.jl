@@ -1,5 +1,2 @@
 Ipopt
 GLPKMathProgInterface
-BaseTestNext
-@osx AmplNLWriter
-@osx CoinOptServices
