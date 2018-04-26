@@ -4,14 +4,14 @@
 #  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 function check_expr_gp(ex::Expr)
-    println("Check: ", ex)
+    # println("Check: ", ex)
 
     # Process expression
     function descend(ex)
         if ex.head == :ref
             # A variable - simplest monomial
             mon = Monomial(1.0, Dict{Int,Float64}(ex.args[2] => 1.0))
-            println("Mon: ", mon)
+            # println("Mon: ", mon)
             return mon
         else
             # First arg is operation type
@@ -27,15 +27,14 @@ function check_expr_gp(ex::Expr)
             end
             # Merge them
             merged = reduce(eval(op), xials)
-            println("Merged: ", merged)
+            # println("Merged: ", merged)
             return merged
         end
     end
 
     final = descend(ex)
-    println("Final: ", final)
-
-    println("")
+    # println("Final: ", final)
+    # println("")
     return final
 end
 

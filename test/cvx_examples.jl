@@ -1,15 +1,14 @@
-#=
-These test cases are translated from the CVX example library
-cvxr.com/cvx/examples/
 
-Below, we copy the licence from cvxr.com/cvx/licensing/
-"The contents of the example library, which is distributed with CVX in the
-examples/ subdirectory, is public domain. You are free to use them in any
-way you wish; but when you do, we request that you give appropriate credit
-to the authors. A number of people have contributed to the examples in this
-library, including Lieven Vandenberghe, Joëlle Skaf, Argyris Zymnis, Almir
-Mutapcic, Michael Grant, and Stephen Boyd."
-=#
+# These test cases are translated from the CVX example library
+# cvxr.com/cvx/examples/
+#
+# Below, we copy the licence from cvxr.com/cvx/licensing/
+# "The contents of the example library, which is distributed with CVX in the
+# examples/ subdirectory, is public domain. You are free to use them in any
+# way you wish; but when you do, we request that you give appropriate credit
+# to the authors. A number of people have contributed to the examples in this
+# library, including Lieven Vandenberghe, Joëlle Skaf, Argyris Zymnis, Almir
+# Mutapcic, Michael Grant, and Stephen Boyd."
 
 @testset "CVX examples" begin
     @testset "Optimal doping profiles, $meth" for meth in methods
@@ -84,7 +83,7 @@ Mutapcic, Michael Grant, and Stephen Boyd."
                 5.00000000558689e16,5.00000000535966e16,5.00000000514724e16,5.00000000494647e16,
                 5.00000000475203e16,5.00000000458168e16
                 ]
-            @test log(getvalue(v)) ≈ log(v_opt) atol=2e-3
+            @test log.(getvalue(v)) ≈ log.(v_opt) atol=2e-3
         end
     end
 

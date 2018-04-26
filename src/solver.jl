@@ -40,7 +40,7 @@ MathProgBase.NonlinearModel(s::GPSolver) = GPInternalModel(s.method, s.real_solv
 
 using_jump(m::GPInternalModel) = (m.method == :LogSumExp)
 
-function MathProgBase.loadproblem!(m::GPInternalModel, numVar, numConstr, x_lb, x_ub, g_lb, g_ub, sense, d::MathProgBase.AbstractNLPEvaluator)
+function MathProgBase.loadproblem!(m::GPInternalModel, numvar, numconstr, x_lb, x_ub, g_lb, g_ub, sense, d::MathProgBase.AbstractNLPEvaluator)
     MathProgBase.initialize(d, [:ExprGraph])
 
     obj = check_expr_gp(MathProgBase.obj_expr(d))
@@ -54,21 +54,19 @@ function MathProgBase.loadproblem!(m::GPInternalModel, numVar, numConstr, x_lb, 
     cons = Any[]
     cons_rhs = Float64[]
 
-    for c in 1:numConstr
+    for c in 1:numconstr
         con_expr = MathProgBase.constr_expr(d, c)
-        @show con_expr
-        @show typeof(con_expr)
-
+        # println("Constraint expr: ", con_expr)
         # Get constraint type
-        @assert isexpr(con_expr, :comparison)
+        @assert isexpr(con_expr, :call)
         @assert length(con_expr.args) == 3
 
-        con_type = con_expr.args[2]
-        #println("Constraint type: $con_type")
+        con_type = con_expr.args[1]
+        # println("Constraint type: ", con_type)
         if con_type == :(>=) # flip
-            con = check_expr_gp(Expr(:call, :*, -1, con_expr.args[1]))
+            con = check_expr_gp(Expr(:call, :*, -1, con_expr.args[2]))
         else
-            con = check_expr_gp(con_expr.args[1])
+            con = check_expr_gp(con_expr.args[2])
         end
 
         if isa(con, Posynomial)
@@ -110,8 +108,8 @@ function MathProgBase.loadproblem!(m::GPInternalModel, numVar, numConstr, x_lb, 
             jump_model = JuMP.Model()
         end
         # x = exp(y), y = log(x)
-        @variable(jump_model, y[1:numVar])
-        for i in 1:numVar
+        y = @variable(jump_model, [1:numvar])
+        for i in 1:numvar
             if x_lb[i] > 0
                 setlowerbound(y[i], log(x_lb[i]))
             end
@@ -123,10 +121,9 @@ function MathProgBase.loadproblem!(m::GPInternalModel, numVar, numConstr, x_lb, 
 
         @objective(jump_model, Min, generate_epigraph(jump_model, y, obj))
 
-        for c in 1:numConstr
+        for c in 1:numconstr
             con = cons[c]
             con_rhs = cons_rhs[c]
-            #@show con_rhs
             @assert con_rhs > 0
             if g_lb[c] == g_ub[c] # equality constraint
                 if isa(con, Posynomial)
@@ -148,11 +145,11 @@ function MathProgBase.loadproblem!(m::GPInternalModel, numVar, numConstr, x_lb, 
     else
         # generate a conic model using Convex.jl
         @assert m.method == :Conic
-        y_convex = Convex.Variable(numVar)
+        y_convex = Convex.Variable(numvar)
         extra_constraints, expr = generate_epigraph(y_convex, obj)
         prob = Convex.minimize(expr, extra_constraints...)
 
-        for i in 1:numVar
+        for i in 1:numvar
             if x_lb[i] > 0
                 push!(prob.constraints, y_convex[i] >= log(x_lb[i]))
             end
@@ -162,7 +159,7 @@ function MathProgBase.loadproblem!(m::GPInternalModel, numVar, numConstr, x_lb, 
             end
         end
 
-        for c in 1:numConstr
+        for c in 1:numconstr
             con = cons[c]
             con_rhs = cons_rhs[c]
             @assert con_rhs > 0
@@ -198,7 +195,7 @@ function discretevalues!(m::GPInternalModel)
 
         if using_jump(m)
             # dummy formulation
-            @variable(m.jump_model, discrete[1:N], Bin)
+            discrete = @variable(m.jump_model, [1:N], category=:Bin)
             @constraint(m.jump_model, sum(discrete) == 1)
             @constraint(m.jump_model, m.y[ind] == dot(logvals, discrete))
         else
@@ -212,7 +209,7 @@ end
 function generate_aux(m::JuMP.Model, y, mon::Monomial)
     # generate an auxiliary variable representing the linear part of the monomial in log space
     @assert mon.c > 0
-    @variable(m, aux)
+    aux = @variable(m)
     @constraint(m, aux == log(mon.c) + sum(v*y[i] for (i,v) in mon.terms))
     return aux
 end
@@ -226,10 +223,10 @@ function generate_epigraph(m::JuMP.Model, y, pos::Posynomial)
     if length(pos.mons) == 1
         return generate_aux(m, y, pos.mons[1])
     else
-        @variable(m, epi)
+        epi = @variable(m)
         mon_aux = [generate_aux(m, y, mon) for mon in pos.mons]
         # could also generate the separable version here
-        @NLconstraint(m, log(sum(exp(aux), aux in mon_aux)) <= epi)
+        @NLconstraint(m, log(sum(exp(aux) for aux in mon_aux)) <= epi)
         return epi
     end
 end
@@ -245,7 +242,7 @@ function generate_epigraph(y::Convex.Variable, pos::Posynomial)
     else
         aux = Convex.Variable(length(pos.mons))
         cons = [aux[k] == generate_epigraph(y, pos.mons[k])[2] for k in 1:length(pos.mons)]
-        return cons, Convex.logsumexp(aux)
+        return (cons, Convex.logsumexp(aux))
     end
 end
 
@@ -262,14 +259,14 @@ function MathProgBase.optimize!(m::GPInternalModel)
         end
         m.status = m.convexjl_problem.status
     end
-    nothing
+    return nothing
 end
 
 MathProgBase.status(m::GPInternalModel) = m.status
 
 function MathProgBase.getobjval(m::GPInternalModel)
     if using_jump(m)
-        return exp(getObjectiveValue(m.jump_model))
+        return exp(getobjectivevalue(m.jump_model))
     else
         return exp(m.convexjl_problem.optval)
     end
@@ -286,5 +283,5 @@ function MathProgBase.getsolution(m::GPInternalModel)
             y = vec(y)
         end
     end
-    return exp(y)
+    return exp.(y)
 end
