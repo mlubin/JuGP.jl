@@ -1,4 +1,5 @@
 Copyright (c) 2016: Miles Lubin and contributors
+Copyright (c) 2018: Chris Coey and contributors
 
 The JuGP Julia module is licensed under the **[MPL]** version 2.0:
 
@@ -41,7 +42,7 @@ The JuGP Julia module is licensed under the **[MPL]** version 2.0:
         means any form of the work other than Source Code Form.
 
     1.7. "Larger Work"
-        means a work that combines Covered Software with other material, in 
+        means a work that combines Covered Software with other material, in
         a separate file or files, that is not Covered Software.
 
     1.8. "License"
