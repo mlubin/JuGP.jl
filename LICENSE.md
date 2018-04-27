@@ -1,4 +1,5 @@
-Copyright (c) 2018: Miles Lubin, Chris Coey, and contributors
+Copyright (c) 2016: Miles Lubin and contributors
+Copyright (c) 2018: Chris Coey and contributors
 
 The JuGP Julia module is licensed under the **[MPL]** version 2.0:
 
