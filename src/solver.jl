@@ -217,11 +217,12 @@ end
 function discretevalues!(m::GPInternalModel)
     for (ind, values) in m.discretevalues
         N = length(values)
-        @assert all(v -> (v > 0), values)
-        logvals = log(values)
-
+        if any(v -> (v <= 0.0), values)
+            error("All values specified in setdiscretevalues must be strictly positive")
+        end
+        logvals = log.(values)
+        # use a binary variable for each possible value
         if using_jump(m)
-            # dummy formulation
             discrete = @variable(m.jump_model, [1:N], category=:Bin)
             @constraint(m.jump_model, sum(discrete) == 1)
             @constraint(m.jump_model, m.y[ind] == dot(logvals, discrete))
