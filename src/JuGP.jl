@@ -17,6 +17,7 @@ include("solver.jl")
 
 function GPModel(;solver=nothing, method=:LogSumExp)
     m = Model(solver=GPSolver(method, solver))
+    JuMP.initNLP(m)
     m.solvehook = solvehook
     m.ext[:GP] = GPData()
     return m
@@ -26,11 +27,12 @@ export GPModel
 
 function setdiscretevalues(x::Variable, values)
     m = x.m
-    haskey(m.ext, :GP) || error("setdiscretevalues can only be called on GP models")
+    if !haskey(m.ext, :GP)
+        error("setdiscretevalues can only be called on a variable of a GP model")
+    end
     vals = convert(Vector{Float64}, collect(values))
     gp = m.ext[:GP]::GPData
     gp.discretevalues[x.col] = vals
-    setdiscretevalues
 end
 
 export setdiscretevalues

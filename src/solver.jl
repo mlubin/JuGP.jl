@@ -7,11 +7,10 @@
 function solvehook(m::Model; suppress_warnings=false)
     gp = m.ext[:GP]::GPData
     m.solver.discretevalues = gp.discretevalues # hack
-
     solve(m, suppress_warnings=suppress_warnings, ignore_solve_hook=true)
 end
 
-type GPSolver <: MathProgBase.AbstractMathProgSolver
+mutable struct GPSolver <: MathProgBase.AbstractMathProgSolver
     method::Symbol
     real_solver
     discretevalues::Dict{Int,Vector{Float64}} # hack to pass this to "solver"
@@ -19,9 +18,12 @@ end
 
 GPSolver(method, real_solver) = GPSolver(method, real_solver, Dict{Int,Vector{Float64}}())
 
-type GPInternalModel <: MathProgBase.AbstractNonlinearModel
+mutable struct GPInternalModel <: MathProgBase.AbstractNonlinearModel
     status::Symbol
     method::Symbol # :LogSumExp or :Conic
+    hasobj::Bool
+    objinverted::Bool
+    objconstant::Float64
     jump_model::JuMP.Model
     convexjl_problem::Convex.Problem
     real_solver
@@ -44,13 +46,29 @@ using_jump(m::GPInternalModel) = (m.method == :LogSumExp)
 function MathProgBase.loadproblem!(m::GPInternalModel, numvar, numconstr, x_lb, x_ub, g_lb, g_ub, sense, d::MathProgBase.AbstractNLPEvaluator)
     MathProgBase.initialize(d, [:ExprGraph])
 
-    obj = check_expr_gp(MathProgBase.obj_expr(d))
-    if sense == :Max
-        @assert isa(obj, Monomial)
-        obj = 1/obj
+    obj = nothing
+    m.objinverted = false
+    objorig = MathProgBase.obj_expr(d)
+    if isa(objorig, Real)
+        m.objconstant = objorig
+        m.hasobj = false
+    else
+        objcheck = check_expr_gp(objorig)
+        if isa(objcheck, Real)
+            m.objconstant = objcheck
+            m.hasobj = false
+        else
+            (obj, m.objconstant) = extract_constants(objcheck)
+            if sense == :Max
+                if !isa(obj, Monomial)
+                    error("Can only maximize a monomial objective function")
+                end
+                obj = 1/obj
+                m.objinverted = true
+            end
+            m.hasobj = true
+        end
     end
-    obj, obj_constant = extract_constants(obj)
-    @assert obj_constant == 0.0
 
     cons = Any[]
     cons_rhs = Float64[]
@@ -93,12 +111,12 @@ function MathProgBase.loadproblem!(m::GPInternalModel, numvar, numconstr, x_lb, 
             end
         end
 
-        con, con_constant = extract_constants(con)
+        (con, con_constant) = extract_constants(con)
         push!(cons, con)
         if con_type == :(>=)
-            push!(cons_rhs, -g_lb[c]-con_constant)
+            push!(cons_rhs, (-g_lb[c] - con_constant))
         else
-            push!(cons_rhs, g_ub[c]-con_constant)
+            push!(cons_rhs, (g_ub[c] - con_constant))
         end
     end
 
@@ -108,6 +126,7 @@ function MathProgBase.loadproblem!(m::GPInternalModel, numvar, numconstr, x_lb, 
         else
             jump_model = JuMP.Model()
         end
+
         # x = exp(y), y = log(x)
         y = @variable(jump_model, [1:numvar])
         for i in 1:numvar
@@ -120,7 +139,9 @@ function MathProgBase.loadproblem!(m::GPInternalModel, numvar, numconstr, x_lb, 
             end
         end
 
-        @objective(jump_model, Min, generate_epigraph(jump_model, y, obj))
+        if m.hasobj
+            @objective(jump_model, Min, generate_epigraph(jump_model, y, obj))
+        end
 
         for c in 1:numconstr
             con = cons[c]
@@ -147,8 +168,13 @@ function MathProgBase.loadproblem!(m::GPInternalModel, numvar, numconstr, x_lb, 
         # generate a conic model using Convex.jl
         @assert m.method == :Conic
         y_convex = Convex.Variable(numvar)
-        extra_constraints, expr = generate_epigraph(y_convex, obj)
-        prob = Convex.minimize(expr, extra_constraints...)
+
+        if !m.hasobj
+            prob = Convex.satisfy()
+        else
+            (extra_constraints, expr) = generate_epigraph(y_convex, obj)
+            prob = Convex.minimize(expr, extra_constraints...)
+        end
 
         for i in 1:numvar
             if x_lb[i] > 0
@@ -266,11 +292,20 @@ end
 MathProgBase.status(m::GPInternalModel) = m.status
 
 function MathProgBase.getobjval(m::GPInternalModel)
-    if using_jump(m)
-        return exp(getobjectivevalue(m.jump_model))
+    if m.hasobj
+        if using_jump(m)
+            val = exp(getobjectivevalue(m.jump_model))
+        else
+            val = exp(m.convexjl_problem.optval)
+        end
+        if m.objinverted
+            val = 1/val
+        end
     else
-        return exp(m.convexjl_problem.optval)
+        val = 0.
     end
+    val += m.objconstant
+    return val
 end
 
 function MathProgBase.getsolution(m::GPInternalModel)

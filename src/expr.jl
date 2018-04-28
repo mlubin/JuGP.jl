@@ -6,7 +6,6 @@
 
 function check_expr_gp(ex::Expr)
     # println("Check: ", ex)
-
     # Process expression
     function descend(ex)
         if ex.head == :ref
@@ -49,7 +48,12 @@ function extract_constants(pos::Posynomial)
             push!(keep_mons, mon)
         end
     end
-    return (Posynomial(keep_mons), constant)
+    if length(keep_mons) > 1
+        return (Posynomial(keep_mons), constant)
+    else
+        @assert length(keep_mons) == 1
+        return (keep_mons[1], constant)
+    end
 end
 
 extract_constants(mon::Monomial) = (mon, 0.0)
