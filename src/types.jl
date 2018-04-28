@@ -10,7 +10,7 @@ import Base: (*), (+), (-), (/), (^), (==)
 
 abstract type Xial end
 
-mutable struct Monomial <: Xial
+struct Monomial <: Xial
     c::Float64
     terms::Dict{Int,Float64} # variable index to power (coefficient)
 end
@@ -28,7 +28,7 @@ function Base.print(io::IO, mon::Monomial)
     end
 end
 
-mutable struct Posynomial <: Xial
+struct Posynomial <: Xial
     mons::Vector{Monomial}
 end
 
@@ -58,7 +58,7 @@ function Base.print(io::IO, pos::Posynomial)
     end
 end
 
-mutable struct GPData
+struct GPData
     discretevalues::Dict{Int,Vector{Float64}}
 end
 
